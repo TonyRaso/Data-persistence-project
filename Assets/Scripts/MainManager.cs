@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class MainManager : MonoBehaviour
 {
@@ -10,6 +14,8 @@ public class MainManager : MonoBehaviour
     public int LineCount = 6;
     public Rigidbody Ball;
 
+    private string Name ;
+    public Text BestScoreText;
     public Text ScoreText;
     public GameObject GameOverText;
     
@@ -18,10 +24,15 @@ public class MainManager : MonoBehaviour
     
     private bool m_GameOver = false;
 
-    
-    // Start is called before the first frame update
+    GameObject gm;
+    MenuManager gms;
+
+    private int SessionHighScore;
+
+ 
     void Start()
     {
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -36,6 +47,16 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        //Récup le nom encodé dans le menu par le user
+
+        gm = GameObject.Find("MenuManager");
+        gms = gm.GetComponent<MenuManager>();
+        gms.LoadScore();
+        Name = gms.NameInGame;
+        
+        SessionHighScore = gms.HighScore;
+        BestScoreText.text = "Best Score : " + gms.NameToSave + " :" + SessionHighScore;
     }
 
     private void Update()
@@ -72,5 +93,24 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        if(m_Points > SessionHighScore)
+        {
+            gms.HighScore =  m_Points;
+            gms.NameToSave = Name;
+            BestScoreText.text = "Best Score : " + Name + " :" + SessionHighScore;
+            gms.SaveHighScore();
+        }
     }
+
+    public void Exit()
+    {
+        gms.SaveHighScore();
+#if UNITY_EDITOR
+
+        EditorApplication.ExitPlaymode();
+#else
+        Application.Quit(); // original code to quit Unity player
+#endif
+    }
+
 }
